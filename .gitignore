@@ -1,0 +1,11 @@
+.idea/*
+target/*
+*.jar
+project/*
+impala_driver_jdbc_odbc*
+*/target/*
+data/*
+application.conf
+
+.bsp/*
+.jvmopts

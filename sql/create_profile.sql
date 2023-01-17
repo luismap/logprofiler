@@ -2,6 +2,7 @@ CREATE SCHEMA profiles;
 
 CREATE TABLE IF NOT EXISTS profiles.impala_profile (
   session_id STRING,
+  session_type STRING,
   user_id STRING,
   sql_statement STRING,
   start_time STRING,

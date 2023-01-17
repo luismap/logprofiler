@@ -44,10 +44,12 @@ class ImpalaMetricProfileStringSource extends Serializable with StringSource {
 
     ImpalaMetricProfile(
       summaryInfo.get("Session ID"),
+      summaryInfo.get("Session Type"),
       summaryInfo.get("User"),
       summaryInfo.get("Sql Statement"),
       summaryInfo.get("Start Time"),
       summaryInfo.get("End Time"),
+      summaryInfo.get("Query Status"),
       summaryInfo.get("Query Type"))
       .clean
 

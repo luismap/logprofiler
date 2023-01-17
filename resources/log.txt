@@ -1,0 +1,105 @@
+ spark-submit --master localhost[*]  --class features.parser.presentation.SparkApp  \
+ --packages org.apache.hadoop:hadoop-aws:2.6.5, org.apache.hadoop:hadoop-common:2.6.5, org.apache.hadoop:hadoop-client:2.6.5, commons-io:commons-io:2.8.0  \
+ --jars ImpalaJDBC41.jar \
+
+
+--------------------------------------------------------------------------------------
+spark-submit --master localhost[*]  --class features.parser.presentation.SparkApp \
+--repositories https://repo.orl.eng.hitachivantara.com/artifactory/pnt-mvn/ \
+ --jars ImpalaJDBC41.jar \
+ target/scala-2.12/spark-streamer_2.12-0.1.0-SNAPSHOT.jar
+
+ -----------------------
+ --packages org.apache.hadoop:hadoop-aws:2.7.3,\
+ com.amazonaws:aws-java-sdk-pom:1.10.6,\
+ org.apache.hadoop:hadoop-common:2.7.3 \
+
+
+-------------------
+
+lazy val overrides = Seq("com.fasterxml.jackson.core" % "jackson-core" % "2.9.5",
+  "com.fasterxml.jackson.core" % "jackson-databind" % "2.9.5",
+  "com.fasterxml.jackson.module" % "jackson-module-scala_2.11" % "2.9.5")
+
+lazy val commonSettings = Seq(
+  version := "0.1",
+  scalaVersion := "2.11.8",
+  resolvers += "Spark Packages Repo" at "http://dl.bintray.com/spark-packages/maven",
+  dependencyOverrides ++= overrides
+)
+
+lazy val assemblySettings = Seq(
+  assemblyMergeStrategy in assembly := {
+    case PathList("org","aopalliance", xs @ _*) => MergeStrategy.last
+    case PathList("javax", "inject", xs @ _*) => MergeStrategy.last
+    case PathList("javax", "servlet", xs @ _*) => MergeStrategy.last
+    case PathList("javax", "activation", xs @ _*) => MergeStrategy.last
+    case PathList("org", "apache", xs @ _*) => MergeStrategy.last
+    case PathList("com", "google", xs @ _*) => MergeStrategy.last
+    case PathList("com", "esotericsoftware", xs @ _*) => MergeStrategy.last
+    case PathList("com", "codahale", xs @ _*) => MergeStrategy.last
+    case PathList("com", "yammer", xs @ _*) => MergeStrategy.last
+    case PathList("org", "slf4j", xs @ _*) => MergeStrategy.last
+    case PathList("org", "neo4j", xs @ _*) => MergeStrategy.last
+    case PathList("com", "typesafe", xs @ _*) => MergeStrategy.last
+    case PathList("net", "jpountz", xs @ _*) => MergeStrategy.last
+    case PathList("META-INF", xs @ _*) => MergeStrategy.discard
+    case "about.html" => MergeStrategy.rename
+    case "META-INF/ECLIPSEF.RSA" => MergeStrategy.last
+    case "META-INF/mailcap" => MergeStrategy.last
+    case "META-INF/mimetypes.default" => MergeStrategy.last
+    case "plugin.properties" => MergeStrategy.last
+    case "log4j.properties" => MergeStrategy.last
+    case x =>
+      val oldStrategy = (assemblyMergeStrategy in assembly).value
+      oldStrategy(x)
+  }
+)
+
+lazy val sparkVersion = "2.2.0"
+
+lazy val commonDependencies = Seq(
+  "org.apache.kafka" %% "kafka" % "1.1.0",
+  "org.apache.spark" %% "spark-core" % sparkVersion % "provided",
+  "org.apache.spark" %% "spark-sql" % sparkVersion,
+  "org.apache.spark" %% "spark-streaming" % sparkVersion,
+  "org.apache.spark" %% "spark-streaming-kafka-0-10" % sparkVersion,
+  "neo4j-contrib" % "neo4j-spark-connector" % "2.1.0-M4",
+  "com.typesafe" % "config" % "1.3.0",
+  "org.neo4j.driver" % "neo4j-java-driver" % "1.5.1",
+  "com.opencsv" % "opencsv" % "4.1",
+  "com.databricks" %% "spark-csv" % "1.5.0",
+  "com.github.tototoshi" %% "scala-csv" % "1.3.5",
+  "org.elasticsearch" %% "elasticsearch-spark-20" % "6.2.4"
+)
+
+lazy val root = (project in file("."))
+  .aggregate(consumer, producer)
+
+
+
+lazy val core = (project in file("core"))
+  .settings(
+    commonSettings,
+    libraryDependencies ++= commonDependencies
+  )
+
+lazy val consumer = (project in file("consumer"))
+  .settings(
+    commonSettings,
+    assemblySettings,
+    libraryDependencies ++= commonDependencies)
+  .settings(
+    mainClass in assembly := Some("consumer.SparkConsumer"),
+    assemblyJarName in assembly := "demo_consumer.jar"
+  ).dependsOn(core)
+
+lazy val producer = (project in file("producer"))
+  .settings(
+    commonSettings,
+    assemblySettings,
+    libraryDependencies ++= commonDependencies
+  ).settings(
+  mainClass in assembly := Some("producer.KafkaCheckinsProducer"),
+  assemblyJarName in assembly := "demo_producer.jar"
+).dependsOn(core)

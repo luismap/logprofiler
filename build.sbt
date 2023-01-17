@@ -35,21 +35,37 @@ lazy val assemblySettingsSpark = Seq(
     case "META-INF/mailcap" => MergeStrategy.last
     case "META-INF/mimetypes.default" => MergeStrategy.last
     case "plugin.properties" => MergeStrategy.last
-    case "log4j.properties" => MergeStrategy.last
-    case x =>
-      val oldStrategy = (assemblyMergeStrategy in assembly).value
-      oldStrategy(x)
+    case "log4j.properties" => MergeStrategy.first
+    case x => MergeStrategy.first
   }
 )
 
 lazy val root = (project in file ("."))
   .settings(
-    name := "root",
-    assemblySettingsParserMod
-  ) aggregate(streamSpark,parserMod)
+    name := "entrypoint",
+    assemblySettingsSpark,
+    excludeDependencies ++= Seq(
+      ExclusionRule("ch.qos.logback.classic.util.ContextSelectorStaticBinder", "logback-classic")
+    ),
+    libraryDependencies ++= Seq(
+      "org.scala-lang" % "scala-reflect" % scalaVersion.value,
+      "org.apache.spark" %% "spark-core" % sparkVersion,
+      "org.apache.spark" %% "spark-sql" % sparkVersion ,
+      "org.apache.spark" %% "spark-hive" % sparkVersion,
+      "org.apache.spark" %% "spark-streaming" % sparkVersion,
+      "org.apache.spark" %% "spark-hadoop-cloud" % sparkVersion,
+      "org.apache.hive" % "hive-jdbc" % "3.1.1",
+      "com.typesafe" % "config" % "1.4.2",
+
+      "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.13.4",
+      "org.apache.hadoop" % "hadoop-common" % hadoopVersion,
+      "org.apache.hadoop" % "hadoop-client" % hadoopVersion,
+      "org.apache.hadoop" % "hadoop-aws" % hadoopVersion
+    ),
+  ) dependsOn (parserMod)
 
 lazy val streamSpark = (project in file("stream-spark"))
-  .dependsOn(parserMod)
+  //.dependsOn(parserMod)
   .settings(
     assemblySettingsSpark,
     libraryDependencies ++= Seq(
@@ -58,10 +74,14 @@ lazy val streamSpark = (project in file("stream-spark"))
       "org.apache.spark" %% "spark-sql" % sparkVersion ,
       "org.apache.spark" %% "spark-hive" % sparkVersion,
       "org.apache.spark" %% "spark-streaming" % sparkVersion,
-      "org.apache.spark" %% "spark-hadoop-cloud" % sparkVersion
-    //  "org.apache.hadoop" % "hadoop-common" % hadoopVersion,
-    // "org.apache.hadoop" % "hadoop-client" % hadoopVersion,
-     // "org.apache.hadoop" % "hadoop-aws" % hadoopVersion
+      "org.apache.spark" %% "spark-hadoop-cloud" % sparkVersion,
+      "org.apache.hive" % "hive-jdbc" % "3.1.1",
+      "com.typesafe" % "config" % "1.4.2",
+
+      "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.13.4",
+     "org.apache.hadoop" % "hadoop-common" % hadoopVersion,
+     "org.apache.hadoop" % "hadoop-client" % hadoopVersion,
+      "org.apache.hadoop" % "hadoop-aws" % hadoopVersion
     )
   )
 
